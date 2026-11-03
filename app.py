@@ -77,56 +77,111 @@ with aba1:
                         fig.update_layout(showlegend=False, height=285, margin=dict(l=0,r=0,t=45,b=0))
                         bloco.plotly_chart(fig, use_container_width=True, key=f"hist_{var}")
 
+
 with aba2:
-    st.subheader("Painel para um público definido pelo autor")
-    st.warning("Atenção: escolha e justifique pessoalmente as métricas e o público-alvo. A IA foi usada apenas como apoio à implementação.")
-    # [IA] ChatGPT — estrutura genérica para o aluno configurar os próprios KPIs, não suas escolhas.
-    publico = st.text_input("Público-alvo definido por você", placeholder="Ex.: escreva aqui o público que VOCÊ escolheu")
-    if not publico.strip():
-        st.caption("Público-alvo ainda não definido. Configure as métricas a seguir e registre suas justificativas em entregas/justificativa-metricas.md.")
-    quantidade = st.slider("Número de métricas", min_value=3, max_value=5, value=3)
-    st.markdown("**Escolha as 3 a 5 métricas do seu painel**")
-    specs=[]
+    st.subheader("Pokémon em números — modelo inicial para iniciantes")
+    st.caption(
+        "Público de referência: pessoas que estão começando a conhecer Pokémon. "
+        "Os números abaixo são exemplos configuráveis; o aluno deve escolher, "
+        "conferir e justificar seus indicadores antes da entrega."
+    )
+
+    # [IA] ChatGPT — sugestões provisórias de configuração da interface.
+    # Não representam uma escolha final nem uma justificativa do aluno.
+    publico = st.text_input(
+        "Público-alvo (revise e confirme sua escolha)",
+        value="Jogadores iniciantes de Pokémon",
+        help="Defina o público-alvo que você realmente escolheu para a atividade.",
+    )
+
+    st.markdown("### Indicadores")
+    st.caption("Três exemplos simples já aparecem para você testar. É possível trocar tudo.")
+    quantidade = st.slider("Quantidade de indicadores", min_value=3, max_value=5, value=3)
+
+    atributos = ["Selecionar..."] + VARS_QUANT
+    operacoes = ["Selecionar...", "Média", "Mediana", "Máximo", "Mínimo", "Desvio padrão", "Contagem"]
+    exemplos = [
+        ("total", "Contagem"),
+        ("attack", "Média"),
+        ("defense", "Média"),
+    ]
+    rotulos = {
+        ("total", "Contagem"): "Registros analisados",
+        ("attack", "Média"): "Ataque médio",
+        ("defense", "Média"): "Defesa média",
+    }
+    descricoes = {
+        ("total", "Contagem"): "Número de registros na amostra filtrada, incluindo formas alternativas.",
+        ("attack", "Média"): "Média aritmética do atributo de ataque na amostra filtrada.",
+        ("defense", "Média"): "Média aritmética do atributo de defesa na amostra filtrada.",
+    }
+
+    indicadores = []
     for i in range(quantidade):
-        col_a, col_b = st.columns([1,1])
-        var = col_a.selectbox(f"Variável do KPI {i+1}", ["Selecionar..."]+VARS_QUANT, key=f"kpi_var_{i}")
-        operacao = col_b.selectbox(f"Cálculo do KPI {i+1}", ["Selecionar...", "Média", "Mediana", "Máximo", "Mínimo", "Desvio padrão", "Contagem"], key=f"kpi_calc_{i}")
-        specs.append((var,operacao))
-    colunas=st.columns(quantidade)
-    for i,((var,op),col) in enumerate(zip(specs,colunas),start=1):
-        valor=calcular_kpi(filtrado,var,op)
-        col.metric(f"KPI {i}: {op} de {var}" if valor is not None else f"KPI {i}: a definir",
-                   f"{valor:,.1f}" if valor is not None else "—")
+        atributo_padrao, operacao_padrao = exemplos[i] if i < len(exemplos) else ("Selecionar...", "Selecionar...")
+        a, b = st.columns(2)
+        var = a.selectbox(
+            f"Atributo do indicador {i + 1}", atributos,
+            index=atributos.index(atributo_padrao), key=f"kpi_var_{i}"
+        )
+        op = b.selectbox(
+            f"Cálculo do indicador {i + 1}", operacoes,
+            index=operacoes.index(operacao_padrao), key=f"kpi_calc_{i}"
+        )
+        indicadores.append((var, op))
+
+    colunas = st.columns(quantidade)
+    for numero, ((var, op), col) in enumerate(zip(indicadores, colunas), start=1):
+        valor = calcular_kpi(filtrado, var, op)
+        nome = rotulos.get((var, op), f"{op} de {var}" if valor is not None else f"Indicador {numero}")
+        col.metric(nome, "—" if valor is None else f"{valor:,.0f}" if op == "Contagem" else f"{valor:,.1f}")
+        if (var, op) in descricoes:
+            col.caption(descricoes[(var, op)])
+
     st.divider()
-    st.markdown("**Três visuais interativos — escolha as variáveis e confirme se fazem sentido para o seu público**")
+    st.markdown("### Três gráficos interativos")
+    st.caption("Exemplos de gráficos configurados para abrir de imediato. Revise se fazem sentido para seu público.")
+
     if filtrado.empty:
-        st.info("Sem registros para exibir no Dashboard 2.")
+        st.warning("Os filtros atuais não retornaram Pokémon. Ajuste o painel lateral.")
     else:
-        # [IA] ChatGPT — estrutura e sintaxe Altair; o aluno escolhe quais 3 gráficos usar.
+        # [IA] ChatGPT — sintaxe Altair para três visuais-modelo e seus controles.
         import altair as alt
         tipos_grafico = ["Escolher gráfico...", "Histograma", "Barras por geração", "Boxplot por classe"]
+        graficos_padrao = [
+            ("Histograma", "attack"),
+            ("Barras por geração", "defense"),
+            ("Boxplot por classe", "hp"),
+        ]
         visuais = st.columns(3)
-        for i, area in enumerate(visuais, start=1):
+        for i, area in enumerate(visuais):
+            tipo_inicial, atributo_inicial = graficos_padrao[i]
             with area:
-                st.markdown(f"**Visual {i}**")
-                tipo_grafico = st.selectbox(f"Gráfico {i}", tipos_grafico, key=f"tipo_visual_{i}")
-                variavel_grafico = st.selectbox(f"Variável do gráfico {i}",
-                                               ["Selecionar..."] + VARS_QUANT, key=f"var_visual_{i}")
+                st.markdown(f"**Gráfico {i + 1}**")
+                tipo_grafico = st.selectbox(
+                    f"Tipo do gráfico {i + 1}", tipos_grafico,
+                    index=tipos_grafico.index(tipo_inicial), key=f"tipo_visual_{i}"
+                )
+                variavel_grafico = st.selectbox(
+                    f"Atributo do gráfico {i + 1}", atributos,
+                    index=atributos.index(atributo_inicial), key=f"var_visual_{i}"
+                )
                 if variavel_grafico not in VARS_QUANT or tipo_grafico == "Escolher gráfico...":
-                    st.info("Escolha o tipo de gráfico e a variável que você deseja mostrar.")
+                    st.info("Escolha um gráfico e uma variável.")
                     continue
+
                 if tipo_grafico == "Histograma":
                     chart = alt.Chart(filtrado).mark_bar(color="#6963af").encode(
-                        x=alt.X(f"{variavel_grafico}:Q", bin=alt.Bin(maxbins=20)),
-                        y=alt.Y("count():Q", title="Registros"),
+                        x=alt.X(f"{variavel_grafico}:Q", bin=alt.Bin(maxbins=20), title=variavel_grafico),
+                        y=alt.Y("count():Q", title="Quantidade de registros"),
                         tooltip=[alt.Tooltip("count():Q", title="Registros")]
                     )
                 elif tipo_grafico == "Barras por geração":
                     medias = filtrado.groupby("generation", as_index=False)[variavel_grafico].mean()
                     chart = alt.Chart(medias).mark_bar(color="#aa69bd").encode(
                         x=alt.X("generation:O", title="Geração"),
-                        y=alt.Y(f"{variavel_grafico}:Q", title=f"Média · {variavel_grafico}"),
-                        tooltip=["generation", alt.Tooltip(f"{variavel_grafico}:Q", format=".1f")]
+                        y=alt.Y(f"{variavel_grafico}:Q", title=f"Média de {variavel_grafico}"),
+                        tooltip=["generation:O", alt.Tooltip(f"{variavel_grafico}:Q", format=".1f")]
                     )
                 else:
                     chart = alt.Chart(filtrado).mark_boxplot(size=35, color="#4c8699").encode(
@@ -134,4 +189,9 @@ with aba2:
                         y=alt.Y(f"{variavel_grafico}:Q", title=variavel_grafico)
                     )
                 st.altair_chart(chart.properties(height=300), use_container_width=True)
-    st.caption("KPIs exibidos são cálculos exploratórios. Para a entrega, registre escolhas, justificativas e validação autorais no arquivo exigido.")
+
+    st.info(
+        "Para a entrega: confirme o público, escolha pessoalmente os três indicadores, "
+        "escreva em entregas/justificativa-metricas.md por que cada um é útil "
+        "e registre o apoio de IA na declaração."
+    )

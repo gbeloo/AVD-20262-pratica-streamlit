@@ -1,32 +1,33 @@
-# Justificativa das métricas — Dashboard 2
+# Dashboard 2 — Escolha e justificativa pessoal das métricas
 
-**Preenchimento individual obrigatório.** A professora exige escolha e justificativa próprias das métricas, não respostas feitas por IA.
+**Atenção:** os indicadores abaixo são **exemplos provisórios** pré-configurados com apoio de IA. A professora exige que você próprio escolha, valide e justifique as métricas. Substitua-os se não forem os que você decidiu usar.
 
-- Público-alvo escolhido por mim: **[escrever]**
-- Objetivo do painel para esse público: **[escrever]**
+## Público-alvo
+- **Exemplo exibido no app:** jogadores iniciantes de Pokémon
+- **Público que eu realmente escolhi:** [escreva sua decisão]
+- **Objetivo que defini para o painel:** [escreva com suas palavras]
 
-Para cada uma das 3 a 5 métricas **que você decidir usar no painel**, preencha:
+## Exemplo de indicador 1: registros analisados
+- **Variável / cálculo do exemplo:** `total` / `Contagem`
+- **O que o número representa:** quantidade de registros na base filtrada, incluindo formas alternativas; não é a quantidade de espécies únicas
+- **Por que EU escolhi essa métrica para o meu público:** [escrever]
+- **Como conferi o resultado:** [escrever]
 
-## KPI 1 — [nome decidido por você]
-- Variável e cálculo: [preencher]
-- O que mede: [preencher]
-- Por que escolhi: [preencher]
-- O que comunica ao público: [preencher]
-- Como conferi o cálculo no dataset: [preencher]
+## Exemplo de indicador 2: ataque médio
+- **Variável / cálculo do exemplo:** `attack` / `Média`
+- **O que o número representa:** média aritmética dos valores de ataque dos registros filtrados
+- **Por que EU escolhi essa métrica para o meu público:** [escrever]
+- **Como conferi o resultado:** [escrever]
 
-## KPI 2 — [nome decidido por você]
-- Variável e cálculo: [preencher]
-- O que mede: [preencher]
-- Por que escolhi: [preencher]
-- O que comunica ao público: [preencher]
-- Como conferi: [preencher]
+## Exemplo de indicador 3: defesa média
+- **Variável / cálculo do exemplo:** `defense` / `Média`
+- **O que o número representa:** média aritmética dos valores de defesa dos registros filtrados
+- **Por que EU escolhi essa métrica para o meu público:** [escrever]
+- **Como conferi o resultado:** [escrever]
 
-## KPI 3 — [nome decidido por você]
-- Variável e cálculo: [preencher]
-- O que mede: [preencher]
-- Por que escolhi: [preencher]
-- O que comunica ao público: [preencher]
-- Como conferi: [preencher]
-
-Preencha mais blocos se escolher 4 ou 5 métricas.
-**Não envie este arquivo ainda com os campos em branco.**
+## Verificação individual
+- [ ] Escolhi pessoalmente o público e as métricas definitivas
+- [ ] Confirmei o significado e a utilidade dos números
+- [ ] Escrevi com minhas palavras as três justificativas
+- [ ] Testei os valores no painel
+- [ ] Registrei o apoio de IA na declaração oficial e assinei o PDF
