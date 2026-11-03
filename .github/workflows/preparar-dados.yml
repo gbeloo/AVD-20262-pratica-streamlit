@@ -1,0 +1,34 @@
+name: Preparar dataset público
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/prepare_data.py"
+      - "src/analytics.py"
+      - ".github/workflows/preparar-dados.yml"
+permissions:
+  contents: write
+jobs:
+  preparar:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar Pandas e NumPy
+        run: pip install 'pandas>=2.2,<3' 'numpy>=2,<3'
+      - name: Baixar e tratar CSV público
+        run: python scripts/prepare_data.py
+      - name: Registrar dataset tratado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/clean/dataset.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "data: exporta dataset limpo do EDA"
+            git push
+          fi

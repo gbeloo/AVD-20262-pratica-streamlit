@@ -1,173 +1,137 @@
-import altair as alt
-import pandas as pd
-import streamlit as st
+"""EDA de Pokémon — app com dois painéis.
 
+[IA] ChatGPT — apoio no esqueleto Streamlit, filtros, sintaxe de gráficos e
+tratamento de estados vazios. O autor deve revisar e compreender todo o código.
+Dashboard 2: métricas, justificativas e público-alvo devem ser definidos pelo autor.
+"""
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
+from src.analytics import BASE_STATS, VARS_QUANT, aplicar_filtros, correlacao_spearman, calcular_kpi
 from src.data_loader import load_data
 
-st.set_page_config(
-    page_title="Avaliação de Correlação entre Variáveis Quantitativas do Heart Disease Dataset",
-    layout="wide",
-)
+st.set_page_config(page_title="Pokémon | Laboratório EDA", page_icon="🧬", layout="wide")
+st.title("🧬 Pokémon | Laboratório EDA")
+st.caption("Gabriel Nascimento Belo Osório · AVD 2026.2 · Base: Pokémon Stats (Kaggle)")
+try:
+    df = load_data()
+except Exception as exc:
+    st.error(f"Falha ao carregar os dados: {exc}")
+    st.stop()
 
-st.title("Avaliação de Correlação entre Variáveis Quantitativas do Heart Disease Dataset")
-
-df = load_data()
-
-# Variáveis quantitativas do estudo (mesma lista VARS_QUANT do notebook de EDA)
-VARS_QUANT = ["age", "trestbps", "chol", "thalach", "oldpeak"]
-
-# Sidebar: filtros (variáveis + intervalo)
+# [IA] ChatGPT — apoio na construção de widgets Streamlit e seu tratamento de limites.
 with st.sidebar:
-    st.header("Filtros")
+    st.header("Filtros gerais")
+    variaveis = st.multiselect("Variáveis para análise", VARS_QUANT, default=BASE_STATS,
+                              help="Escolha os atributos do laboratório de correlação e distribuição.")
+    variavel_intervalo = st.selectbox("Atributo do filtro de intervalo", VARS_QUANT)
+    minimo = float(df[variavel_intervalo].min())
+    maximo = float(df[variavel_intervalo].max())
+    intervalo = st.slider(f"Intervalo de {variavel_intervalo}", min_value=minimo,
+                         max_value=maximo, value=(minimo, maximo), step=1.0)
+    geracoes = st.multiselect("Gerações", sorted(df["generation"].dropna().unique().tolist()),
+                              default=sorted(df["generation"].dropna().unique().tolist()))
+    tipos = st.multiselect("Tipo primário", sorted(df["type1"].dropna().unique().tolist()),
+                           default=sorted(df["type1"].dropna().unique().tolist()))
+    classe = st.selectbox("Categoria", ["Todos", "Lendário", "Não lendário"])
 
-    variaveis = st.multiselect(
-        "Variáveis Quantitativas",
-        options=VARS_QUANT,
-        default=VARS_QUANT,
-        help="Selecione as variáveis quantitativas que deseja analisar no dashboard.",
-    )
+filtrado = aplicar_filtros(df, variavel_intervalo, intervalo, geracoes, tipos, classe)
+st.caption(f"Registros exibidos: **{len(filtrado)} de {len(df)}**. As formas alternativas fazem parte da base.")
+aba1, aba2 = st.tabs(["📊 Dashboard 1 · Distribuição e correlação",
+                       "🎯 Dashboard 2 · KPIs por público-alvo"])
 
-    separar_por_classe = st.toggle(
-        "Distinguir por Classe",
-        value=False,
-        help="Colore a distribuição pela classe (doenca_cardiaca: Normal ou Cardíaco).",
-    )
-
-    # Um slider de intervalo para cada variável selecionada
-    intervalos = {}
-    for var in variaveis:
-        if pd.api.types.is_integer_dtype(df[var]):
-            minimo, maximo, passo = int(df[var].min()), int(df[var].max()), 1
-        else:
-            minimo, maximo, passo = float(df[var].min()), float(df[var].max()), 0.1
-        intervalos[var] = st.slider(
-            f"Intervalo de {var}",
-            min_value=minimo,
-            max_value=maximo,
-            value=(minimo, maximo),
-            step=passo,
-            key=f"intervalo_{var}",
-        )
-
-# Mantém só os pacientes dentro de todos os intervalos escolhidos
-df_filtrado = df
-for var, (inicio, fim) in intervalos.items():
-    df_filtrado = df_filtrado[df_filtrado[var].between(inicio, fim)]
-
-st.caption(f"{len(df_filtrado)} de {len(df)} pacientes dentro dos intervalos escolhidos.")
-
-# Dashboard 1: correlação (heatmap) à esquerda, distribuição (histograma) à direita
-col_correlacao, col_distribuicao = st.columns([1, 1.5])
-
-# Cores do histograma, em tons de sangue: vermelho arterial para Cardíaco, rosa claro para Normal
-COR_NORMAL = "#f4a6a6"
-COR_CARDIACO = "#c1121f"
-COR_HISTOGRAMA = COR_CARDIACO
-CORES_CLASSE = alt.Scale(domain=["Normal", "Cardíaco"], range=[COR_NORMAL, COR_CARDIACO])
-
-# Legenda das classes em texto, para caber no espaço livre da grade de histogramas
-LEGENDA_CLASSE = (
-    f"**Classe**  \n"
-    f":color[■]{{foreground=\"{COR_NORMAL}\"}} Normal  \n"
-    f":color[■]{{foreground=\"{COR_CARDIACO}\"}} Cardíaco"
-)
-
-with col_correlacao:
-    st.subheader("Correlação (Spearman)")
-
-    if len(variaveis) < 2:
-        st.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
-    elif len(df_filtrado) < 30:
-        st.warning("Poucos pacientes nos intervalos escolhidos para calcular a correlação.")
+with aba1:
+    st.subheader("Laboratório de distribuição e correlação")
+    st.write("Explore o formato das distribuições e as associações entre atributos, com os mesmos critérios da EDA original.")
+    if filtrado.empty:
+        st.warning("Nenhum Pokémon corresponde aos filtros. Amplie os intervalos ou categorias.")
     else:
-        # Matriz de correlação de Spearman das variáveis selecionadas, em formato longo (uma linha por célula)
-        corr = (
-            df_filtrado[variaveis]
-            .corr(method="spearman")
-            .rename_axis(index="var_y", columns="var_x")
-            .stack()
-            .rename("correlacao")
-            .reset_index()
-        )
-        # Só o triângulo inferior, sem a diagonal (sempre 1): a matriz é simétrica, o resto é repetição
-        ordem = {var: i for i, var in enumerate(variaveis)}
-        corr = corr[corr["var_y"].map(ordem) > corr["var_x"].map(ordem)]
+        a,b = st.columns([1.1, 1.3])
+        with a:
+            st.markdown("**Correlação de Spearman**")
+            if len(variaveis) < 2:
+                st.info("Selecione pelo menos duas variáveis para o mapa de calor.")
+            else:
+                cor = correlacao_spearman(filtrado, variaveis)
+                if cor.empty or cor.isna().all().all():
+                    st.info("Não há variação suficiente para calcular correlações.")
+                else:
+                    graf = go.Figure(data=go.Heatmap(z=cor.values, x=cor.columns, y=cor.index,
+                        zmin=-1, zmax=1, colorscale="RdBu", reversescale=True,
+                        text=cor.round(2).fillna(0).values, texttemplate="%{text:.2f}",
+                        colorbar=dict(title="ρ"), hovertemplate="%{y} × %{x}: %{z:.2f}<extra></extra>"))
+                    graf.update_layout(margin=dict(l=0,r=0,b=30,t=20), height=420)
+                    st.plotly_chart(graf, use_container_width=True)
+                    st.caption("`total` é a soma dos seis atributos; sua correlação não é evidência independente.")
+        with b:
+            st.markdown("**Histogramas**")
+            if not variaveis:
+                st.info("Selecione uma ou mais variáveis na barra lateral.")
+            else:
+                for ix in range(0, len(variaveis), 2):
+                    cols = st.columns(2)
+                    for bloco, var in zip(cols, variaveis[ix:ix+2]):
+                        fig = px.histogram(filtrado, x=var, nbins=25, marginal="box",
+                                title=var.replace('_',' ').title(), color_discrete_sequence=["#6963af"])
+                        fig.update_layout(showlegend=False, height=285, margin=dict(l=0,r=0,t=45,b=0))
+                        bloco.plotly_chart(fig, use_container_width=True, key=f"hist_{var}")
 
-        base = alt.Chart(corr).encode(
-            x=alt.X(
-                "var_x:N",
-                title=None,
-                sort=variaveis[:-1],  # a última variável só aparece nas linhas
-                axis=alt.Axis(labelAngle=0, labelFontSize=14),
-            ),
-            y=alt.Y("var_y:N", title=None, sort=variaveis[1:], axis=alt.Axis(labelFontSize=14)),  # a primeira só nas colunas
-        )
-        heatmap = base.mark_rect().encode(
-            color=alt.Color(
-                "correlacao:Q",
-                title="Spearman",
-                scale=alt.Scale(scheme="redblue", domain=[-1, 1], reverse=True),
-                legend=alt.Legend(titleFontSize=14, labelFontSize=13),
-            ),
-            tooltip=["var_x", "var_y", alt.Tooltip("correlacao:Q", format=".2f")],
-        )
-        valores = base.mark_text(fontSize=16).encode(
-            text=alt.Text("correlacao:Q", format=".2f"),
-            color=alt.condition(
-                "abs(datum.correlacao) > 0.5", alt.value("white"), alt.value("black")
-            ),
-        )
-
-        st.altair_chart(
-            (heatmap + valores).properties(height=380),
-            width="stretch",
-            alt="Mapa de calor (triângulo inferior, sem a diagonal) da correlação de Spearman entre as variáveis quantitativas selecionadas",
-        )
-
-with col_distribuicao:
-    st.subheader("Distribuição")
-
-    if not variaveis:
-        st.warning("Selecione pelo menos 1 variável para ver a distribuição.")
-    elif df_filtrado.empty:
-        st.warning("Nenhum paciente dentro dos intervalos escolhidos.")
+with aba2:
+    st.subheader("Painel para um público definido pelo autor")
+    st.warning("Atenção: escolha e justifique pessoalmente as métricas e o público-alvo. A IA foi usada apenas como apoio à implementação.")
+    # [IA] ChatGPT — estrutura genérica para o aluno configurar os próprios KPIs, não suas escolhas.
+    publico = st.text_input("Público-alvo definido por você", placeholder="Ex.: escreva aqui o público que VOCÊ escolheu")
+    if not publico.strip():
+        st.caption("Público-alvo ainda não definido. Configure as métricas a seguir e registre suas justificativas em entregas/justificativa-metricas.md.")
+    quantidade = st.slider("Número de métricas", min_value=3, max_value=5, value=3)
+    st.markdown("**Escolha as 3 a 5 métricas do seu painel**")
+    specs=[]
+    for i in range(quantidade):
+        col_a, col_b = st.columns([1,1])
+        var = col_a.selectbox(f"Variável do KPI {i+1}", ["Selecionar..."]+VARS_QUANT, key=f"kpi_var_{i}")
+        operacao = col_b.selectbox(f"Cálculo do KPI {i+1}", ["Selecionar...", "Média", "Mediana", "Máximo", "Mínimo", "Desvio padrão", "Contagem"], key=f"kpi_calc_{i}")
+        specs.append((var,operacao))
+    colunas=st.columns(quantidade)
+    for i,((var,op),col) in enumerate(zip(specs,colunas),start=1):
+        valor=calcular_kpi(filtrado,var,op)
+        col.metric(f"KPI {i}: {op} de {var}" if valor is not None else f"KPI {i}: a definir",
+                   f"{valor:,.1f}" if valor is not None else "—")
+    st.divider()
+    st.markdown("**Três visuais interativos — escolha as variáveis e confirme se fazem sentido para o seu público**")
+    if filtrado.empty:
+        st.info("Sem registros para exibir no Dashboard 2.")
     else:
-        # Com número par de variáveis não sobra espaço na grade: a legenda vai acima dela
-        if separar_por_classe and len(variaveis) % 2 == 0:
-            st.markdown(LEGENDA_CLASSE)
-
-        # Um histograma por variável selecionada, em grade de 2 colunas (cada um com a sua escala)
-        for inicio in range(0, len(variaveis), 2):
-            colunas = st.columns(2)
-            for coluna, var in zip(colunas, variaveis[inicio : inicio + 2]):
-                histograma = (
-                    alt.Chart(df_filtrado[[var, "doenca_cardiaca"]])
-                    .mark_bar()
-                    .encode(
-                        x=alt.X(f"{var}:Q", bin=alt.Bin(maxbins=20), title=var),
-                        y=alt.Y("count()", title="Pacientes"),
-                        tooltip=[alt.Tooltip("count()", title="Pacientes")],
+        # [IA] ChatGPT — estrutura e sintaxe Altair; o aluno escolhe quais 3 gráficos usar.
+        import altair as alt
+        tipos_grafico = ["Escolher gráfico...", "Histograma", "Barras por geração", "Boxplot por classe"]
+        visuais = st.columns(3)
+        for i, area in enumerate(visuais, start=1):
+            with area:
+                st.markdown(f"**Visual {i}**")
+                tipo_grafico = st.selectbox(f"Gráfico {i}", tipos_grafico, key=f"tipo_visual_{i}")
+                variavel_grafico = st.selectbox(f"Variável do gráfico {i}",
+                                               ["Selecionar..."] + VARS_QUANT, key=f"var_visual_{i}")
+                if variavel_grafico not in VARS_QUANT or tipo_grafico == "Escolher gráfico...":
+                    st.info("Escolha o tipo de gráfico e a variável que você deseja mostrar.")
+                    continue
+                if tipo_grafico == "Histograma":
+                    chart = alt.Chart(filtrado).mark_bar(color="#6963af").encode(
+                        x=alt.X(f"{variavel_grafico}:Q", bin=alt.Bin(maxbins=20)),
+                        y=alt.Y("count():Q", title="Registros"),
+                        tooltip=[alt.Tooltip("count():Q", title="Registros")]
                     )
-                    .properties(height=200)
-                )
-                if separar_por_classe:
-                    histograma = histograma.encode(
-                        color=alt.Color(
-                            "doenca_cardiaca:N",
-                            title="Classe",
-                            scale=CORES_CLASSE,
-                            legend=None,
-                        ),
-                        tooltip=["doenca_cardiaca", alt.Tooltip("count()", title="Pacientes")],
+                elif tipo_grafico == "Barras por geração":
+                    medias = filtrado.groupby("generation", as_index=False)[variavel_grafico].mean()
+                    chart = alt.Chart(medias).mark_bar(color="#aa69bd").encode(
+                        x=alt.X("generation:O", title="Geração"),
+                        y=alt.Y(f"{variavel_grafico}:Q", title=f"Média · {variavel_grafico}"),
+                        tooltip=["generation", alt.Tooltip(f"{variavel_grafico}:Q", format=".1f")]
                     )
                 else:
-                    histograma = histograma.mark_bar(color=COR_HISTOGRAMA)
-
-                with coluna:
-                    st.altair_chart(histograma, width="stretch", alt=f"Histograma da variável {var}")
-
-            # Número ímpar de variáveis: a legenda ocupa o espaço que sobrou na última linha
-            if separar_por_classe and len(colunas) == 2 and len(variaveis[inicio : inicio + 2]) == 1:
-                colunas[1].markdown(LEGENDA_CLASSE)
-
-# TODO: Dashboard 2 — KPIs (Aula 22)
+                    chart = alt.Chart(filtrado).mark_boxplot(size=35, color="#4c8699").encode(
+                        x=alt.X("legendary_label:N", title="Categoria"),
+                        y=alt.Y(f"{variavel_grafico}:Q", title=variavel_grafico)
+                    )
+                st.altair_chart(chart.properties(height=300), use_container_width=True)
+    st.caption("KPIs exibidos são cálculos exploratórios. Para a entrega, registre escolhas, justificativas e validação autorais no arquivo exigido.")
