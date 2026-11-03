@@ -2,6 +2,8 @@
 
 **Aluno:** Gabriel Nascimento Belo Osório
 
+**Aplicativo publicado:** [Acessar Dashboard de Pokémon](https://avd-20262-pratica-app-eux4eeqo9bnhdbdtsleebn.streamlit.app/)
+
 Aplicação Streamlit com dois dashboards, baseada na EDA entregue na disciplina de Análise e Visualização de Dados. Dataset público [Pokémon Stats (Kaggle)](https://www.kaggle.com/datasets/ulrikthygepedersen/pokemon-stats).
 
 ## O que já está programado
