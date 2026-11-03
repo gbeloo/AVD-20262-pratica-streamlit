@@ -2,7 +2,7 @@
 
 [IA] ChatGPT — apoio no esqueleto Streamlit, filtros, sintaxe de gráficos e
 tratamento de estados vazios. O autor deve revisar e compreender todo o código.
-Dashboard 2: métricas, justificativas e público-alvo devem ser definidos pelo autor.
+Dashboard 2: público e métricas escolhidos pelo aluno; código desenvolvido com apoio da IA.
 """
 import pandas as pd
 import plotly.express as px
@@ -79,23 +79,21 @@ with aba1:
 
 
 with aba2:
-    st.subheader("Pokémon em números — modelo inicial para iniciantes")
+    st.subheader("Pokémon em números — visão para iniciantes")
     st.caption(
-        "Público de referência: pessoas que estão começando a conhecer Pokémon. "
-        "Os números abaixo são exemplos configuráveis; o aluno deve escolher, "
-        "conferir e justificar seus indicadores antes da entrega."
+        "Público-alvo: jogadores iniciantes. O painel apresenta indicadores simples "
+        "para conhecer os atributos dos Pokémon e explorar a base com filtros."
     )
 
-    # [IA] ChatGPT — sugestões provisórias de configuração da interface.
-    # Não representam uma escolha final nem uma justificativa do aluno.
+    # [IA] ChatGPT — implementação da interface; escolhas de público e métricas confirmadas pelo aluno.
     publico = st.text_input(
-        "Público-alvo (revise e confirme sua escolha)",
+        "Público-alvo",
         value="Jogadores iniciantes de Pokémon",
-        help="Defina o público-alvo que você realmente escolheu para a atividade.",
+        help="Público escolhido: jogadores iniciantes de Pokémon.",
     )
 
     st.markdown("### Indicadores")
-    st.caption("Três exemplos simples já aparecem para você testar. É possível trocar tudo.")
+    st.caption("Indicadores escolhidos: quantidade de registros analisados, ataque médio e defesa média. Os filtros atualizam os valores.")
     quantidade = st.slider("Quantidade de indicadores", min_value=3, max_value=5, value=3)
 
     atributos = ["Selecionar..."] + VARS_QUANT
@@ -140,7 +138,7 @@ with aba2:
 
     st.divider()
     st.markdown("### Três gráficos interativos")
-    st.caption("Exemplos de gráficos configurados para abrir de imediato. Revise se fazem sentido para seu público.")
+    st.caption("Use os gráficos para enxergar a distribuição dos atributos e comparar grupos.")
 
     if filtrado.empty:
         st.warning("Os filtros atuais não retornaram Pokémon. Ajuste o painel lateral.")
@@ -191,7 +189,6 @@ with aba2:
                 st.altair_chart(chart.properties(height=300), use_container_width=True)
 
     st.info(
-        "Para a entrega: confirme o público, escolha pessoalmente os três indicadores, "
-        "escreva em entregas/justificativa-metricas.md por que cada um é útil "
-        "e registre o apoio de IA na declaração."
+        "Indicadores e público selecionados pelo aluno. A redação do arquivo de justificativas foi revisada com IA; "
+        "registre esse apoio e a conferência dos cálculos na declaração obrigatória."
     )

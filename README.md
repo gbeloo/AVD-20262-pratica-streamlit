@@ -7,7 +7,7 @@ Aplicação Streamlit com dois dashboards, baseada na EDA entregue na disciplina
 ## O que já está programado
 
 - Dashboard 1: seletor de variáveis, slider, filtros por geração/tipo/classe, heatmap de Spearman e histogramas quantitativos.
-- Dashboard 2: estrutura para 3–5 KPIs e três visuais em Altair, controlados pelo próprio usuário. **A escolha final do público, dos KPIs e dos gráficos precisa ser feita pelo aluno**, conforme orientações da professora.
+- Dashboard 2: público-alvo definido como **jogadores iniciantes**; três KPIs escolhidos (**quantidade de registros, ataque médio e defesa média**) e três gráficos Altair configurados por padrão. Os valores respondem aos filtros.
 - Tratamento do dataset coerente com o notebook, inclusive formas alternativas, correção `Blastoise`/`Graass` e ausência de `type2`.
 - Testes de lógica local e testes de interface via GitHub Actions, documentação de IA e layouts rascunhados.
 
@@ -33,7 +33,7 @@ O app usa `data/clean/dataset.csv` quando presente. Se faltar, utiliza como fall
 2. Copie os arquivos deste pacote para os mesmos caminhos no fork, preservando `notebooks/arquivo-eda-original.ipynb` e `notebooks/eda-com-downloads.ipynb` do modelo.
 3. No fork, abra **Actions** e execute **Preparar dataset público**, caso o workflow não tenha gerado automaticamente o CSV.
 4. No [Streamlit Community Cloud](https://share.streamlit.io), conecte ao GitHub, selecione seu fork, branch `main`, caminho `app.py` e Python 3.12.
-5. Teste em aba anônima, ajuste o Dashboard 2 com suas decisões, preencha `entregas/justificativa-metricas.md`, declaração oficial assinada e atualize a URL abaixo.
+5. Teste em aba anônima, confira os indicadores definidos no Dashboard 2, revise `entregas/justificativa-metricas.md`, preencha e assine a declaração oficial de IA e atualize a URL abaixo.
 
 **Link do app:** PENDENTE DE PUBLICAÇÃO — substituir por `https://<nome>.streamlit.app`
 
@@ -43,7 +43,7 @@ O app usa `data/clean/dataset.csv` quando presente. Se faltar, utiliza como fall
 - `app.py`: os dois painéis.
 - `src/`: leitura e funções de análise.
 - `data/clean/dataset.csv`: gerar via GitHub Actions e versionar.
-- `entregas/`: rascunhos de layout + justificativa pessoal das métricas (ainda precisa preencher).
+- `entregas/`: rascunhos de layout + justificativa das métricas confirmadas pelo aluno, com redação revisada por IA (conferir antes da entrega).
 - `prompts/`: registro do uso real da IA e declaração para assinatura.
 - `tests/`: testes automatizados e checklist manual.
 
